@@ -8,7 +8,7 @@ We use this repo issues to track several kinds of discussion on topics related w
 
 ## Contribute
 
-Feel free to join in. All welcome. Open an [issue](https://github.com/ipfs/notes/issues)!
+Feel free to join in. All welcome. Open an [issue](https://github.com/libp2p/notes/issues)!
 
 This repository falls under the IPFS [Code of Conduct](https://github.com/ipfs/community/blob/master/code-of-conduct.md).
 
