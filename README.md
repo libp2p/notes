@@ -4,7 +4,7 @@
 [![](https://img.shields.io/badge/project-libp2p-yellow.svg?style=flat-square)](http://libp2p.io/)
 [![](https://img.shields.io/badge/freenode-%23libp2p-yellow.svg?style=flat-square)](http://webchat.freenode.net/?channels=%23libp2p)
 
-We use this repo issues to track several kinds of discussion on topics related with Research and libp2p, random ideas and proposals for new systems or features that don't fall on a specific repo yet. All the discussion happens in the issues the [issues](https://github.com/ipfs/notes/issues).
+We use this repo issues to track several kinds of discussion on topics related with Research and libp2p, random ideas and proposals for new systems or features that don't fall on a specific repo yet. All the discussion happens in the [issues](https://github.com/ipfs/notes/issues).
 
 ## Contribute
 
