@@ -38,14 +38,16 @@ message DataGauge {
 // Transport represents the state of a transport. Stats for the transport are
 // hosted and reported from the relevant component.
 message Transport {
+    // the id of this transport for referencing purposes.
+    bytes id       = 1;
     // the name of this transport.
-    string name     = 1;
+    string name     = 2;
     // whether this transport is enabled for listening.
-    bool listening  = 2;
+    bool listening  = 3;
     // whether this transport is enabled for dialing.
-    bool dialing    = 3;
+    bool dialing    = 4;
     // the multiaddrs this transport is listening on, if enabled for listening.
-    repeated string listen_multiaddrs = 4;
+    repeated string listen_multiaddrs = 5;
 }
 
 // Dialer encapsulates stats and state about the swarm dialer.
@@ -178,8 +180,8 @@ message Connection {
     string peer_id          = 2;
     // the status of this connection.
     Status status           = 3;
-    // the transport managing this connection.
-    Transport transport     = 4;
+    // a reference to the transport managing this connection.
+    bytes transport_id      = 4;
     // the endpoints participating in this connection.
     EndpointPair endpoints  = 5;
     // the timeline of the connection, see Connection.Timeline.
