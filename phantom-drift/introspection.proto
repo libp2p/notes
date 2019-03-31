@@ -269,7 +269,9 @@ message Stream {
     // traffic statistics.
     Traffic traffic = 4;
     // the connection this stream is hosted under.
-    ConnectionRef conn = 5;
+    ConnectionRef conn  = 5;
+    // the timeline of the stream, see Stream.Timeline.
+    Timeline timeline   = 6;
 
     // the instantaneous latency of this stream in nanoseconds.
     // TODO: this is hard to calculate.
