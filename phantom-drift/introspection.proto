@@ -11,8 +11,19 @@ message ResultCounter {
     uint32 err = 3;
 }
 
-// Moving totals over different time windows. Not all have to be filled.
-message TimeWindowCounter {
+// Moving totals over sliding time windows. Models sensible time windows,
+// we don't have to populate them all at once.
+//
+// Graphical example:
+//
+// time     past -> present                              an event 16 min ago
+// ======================================================X================>>
+//                                                       |               | 1m
+//                                                       |           |---| 5m
+//                                                       | |-------------| 15m
+//                                          |------------X---------------| 30m
+//            |------------------------------------------X---------------| 60m
+message SlidingCounter {
     uint32 over_1m      = 1;
     uint32 over_5m      = 2;
     uint32 over_15m     = 3;
@@ -80,11 +91,11 @@ message Swarm {
     // SwarmCounterGroup models a group of counters; encapsulation is important to spare 1-byte field IDs (1-15).
     message SwarmCounterGroup {
         // incoming items opened.
-        TimeWindowCounter incoming_opened = 1;
+        SlidingCounter incoming_opened = 1;
         // outgoing items opened.
-        TimeWindowCounter outgoing_opened = 2;
+        SlidingCounter outgoing_opened = 2;
         // items closed.
-        TimeWindowCounter closed = 3;
+        SlidingCounter closed = 3;
         // current count (instantaneous reading).
         uint32 active = 4;
     }
@@ -92,9 +103,9 @@ message Swarm {
     // TaggedSwarmCounterGroup models a group of counters segregated by a tag.
     // See docs for SwarmCounterGroup for inner fields.
     message TaggedSwarmCounterGroup {
-        map<string, TimeWindowCounter> incoming_opened = 1;
-        map<string, TimeWindowCounter> outgoing_opened = 2;
-        map<string, TimeWindowCounter> closed = 3;
+        map<string, SlidingCounter> incoming_opened = 1;
+        map<string, SlidingCounter> outgoing_opened = 2;
+        map<string, SlidingCounter> closed = 3;
         map<string, uint32> active = 4;
     }
 
