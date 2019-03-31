@@ -127,6 +127,12 @@ message Runtime {
     string platform         = 3;
 }
 
+// Subsystems encapsulates all instrumented subsystems for a libp2p host.
+message Subsystems {
+    // the swarm subsystem.
+    Swarm swarm = 1;
+}
+
 // Host is a top-level object conveying a cross-cutting view of the entire system, including all subsystems.
 // TODO: WIP right now we're only covering the Swarm subsystem.
 message Host {
@@ -138,8 +144,8 @@ message Host {
     repeated Transport transports = 3;
     // the protocols attached to this host.
     repeated string protocols = 4;
-    // the swarm subsystem.
-    Swarm swarm = 5;
+    // subsystem introspection.
+    Subsystems subsystems = 5;
 }
 
 // EndpointPair is a pair of multiaddrs.
