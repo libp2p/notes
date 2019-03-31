@@ -165,6 +165,25 @@ enum Role {
     RESPONDER = 1;
 }
 
+// Traffic encloses data transfer statistics.
+message Traffic {
+    // snapshot of the data in metrics.
+    DataGauge traffic_in    = 1;
+    // snapshot of the data out metrics.
+    DataGauge traffic_out   = 2;
+}
+
+// a list of streams, by reference or inlined.
+message StreamList {
+    // NOTE: only one of the next 2 fields can appear, but proto3
+    // doesn't support combining oneof and repeated.
+    //
+    // streams within this connection by reference.
+    repeated bytes stream_ids   = 1;
+    // streams within this connection by inlining.
+    repeated Stream streams     = 2;
+}
+
 // Connection reports metrics and state of a libp2p connection.
 message Connection {
     // Timeline contains the timestamps of the well-known milestones of a connection.
@@ -200,23 +219,16 @@ message Connection {
     Timeline timeline       = 6;
     // our role in this connection.
     Role role               = 7;
-    // snapshot of the data in metrics of this connection.
-    DataGauge traffic_in    = 8;
-    // snapshot of the data out metrics of this connection.
-    DataGauge traffic_out   = 9;
+    // traffic statistics.
+    Traffic traffic         = 8;
     // properties of this connection.
-    Attributes attribs      = 10;
+    Attributes attribs      = 9;
     // the instantaneous latency of this connection in nanoseconds.
-    uint64 latency_ns       = 11;
+    uint64 latency_ns       = 10;
+    // streams within this connection.
+    StreamList streams      = 11;
 
-    // NOTE: only one of the next 2 fields can appear, but proto3
-    // doesn't support combining oneof and repeated.
-    // streams within this connection by reference.
-    repeated bytes stream_ids   = 12;
-    // streams within this connection by inlining.
-    repeated Stream streams     = 13;
-
-    reserved 14, 15;
+    reserved 12 to 15;
 
     // if this is a relayed connection, this points to the relaying connection.
     // a default value here (empty bytes) indicates this is not a relayed connection.
@@ -230,6 +242,15 @@ message Connection {
 
 // Stream reports metrics and state of a libp2p stream.
 message Stream {
+    message ConnectionRef {
+        oneof connection {
+            // the parent connection inlined.
+            Connection conn = 1;
+            // the parent connection by reference.
+            bytes conn_id   = 2;
+        }
+    }
+
     // Timeline contains the timestamps of the well-known milestones of a stream.
     message Timeline {
         // the instant when the stream was opened.
@@ -240,24 +261,15 @@ message Stream {
 
     // the id of this stream, not to be shown in user tooling,
     // used for (cross)referencing streams.
-    bytes id = 1;
+    bytes id        = 1;
     // the protocol pinned to this stream.
     string protocol = 2;
     // our role in this stream.
     Role role       = 3;
-
-    // snapshot of the data in metrics of this stream.
-    DataGauge traffic_in    = 4;
-    // snapshot of the data out metrics of this stream.
-    DataGauge traffic_out   = 5;
-
+    // traffic statistics.
+    Traffic traffic = 4;
     // the connection this stream is hosted under.
-    oneof connection {
-        // the parent connection inlined.
-        Connection conn = 6;
-        // the parent connection by reference.
-        bytes conn_id   = 7;
-    }
+    ConnectionRef conn = 5;
 
     // the instantaneous latency of this stream in nanoseconds.
     // TODO: this is hard to calculate.
@@ -265,8 +277,6 @@ message Stream {
     // user provided tags.
     repeated string user_provided_tags  = 99;
 }
-
-
 
 // TODO:
 //
