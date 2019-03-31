@@ -117,17 +117,29 @@ message Swarm {
     reserved 7 to 15;
 }
 
+// Runtime encapsulates runtime info about a node.
+message Runtime {
+    // e.g. go-libp2p, js-libp2p, rust-libp2p, etc.
+    string implementation   = 1;
+    // e.g. 1.2.3.
+    string version          = 2;
+    // e.g. Windows, Unix, macOS, Chrome, Mozilla, etc.
+    string platform         = 3;
+}
+
 // Host is a top-level object conveying a cross-cutting view of the entire system, including all subsystems.
 // TODO: WIP right now we're only covering the Swarm subsystem.
 message Host {
     // our peer id.
-    string peer_id = 1;
+    string peer_id  = 1;
+    // this node's info.
+    Runtime runtime = 2;
     // the transports enabled in this host.
-    repeated Transport transports = 2;
+    repeated Transport transports = 3;
     // the protocols attached to this host.
-    repeated string protocols = 3;
+    repeated string protocols = 4;
     // the swarm subsystem.
-    Swarm swarm = 4;
+    Swarm swarm = 5;
 }
 
 // EndpointPair is a pair of multiaddrs.
