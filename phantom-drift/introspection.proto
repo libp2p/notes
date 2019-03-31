@@ -35,13 +35,6 @@ message DataGauge {
     uint64 inst_bw      = 3;
 }
 
-// PeerId represents a peer ID.
-// TODO: At this point I'm unsure if we'll return the string or the bytes representation.
-message PeerId {
-    bytes id_bytes = 1;
-    string id_string = 2;
-}
-
 // Transport represents the state of a transport. Stats for the transport are
 // hosted and reported from the relevant component.
 message Transport {
@@ -59,8 +52,8 @@ message Transport {
 message Dialer {
     // InflightDial represents a dial that is in progress.
     message InflightDial {
-        PeerId peer_id              = 1;
-        uint32 addrs_cnt            = 2;
+        string peer_id          = 1;
+        uint32 addrs_cnt        = 2;
         ResultCounter attempts  = 3;
     }
 
@@ -126,7 +119,7 @@ message Swarm {
 // TODO: WIP right now we're only covering the Swarm subsystem.
 message Host {
     // our peer id.
-    PeerId id = 1;
+    string peer_id = 1;
     // the transports enabled in this host.
     repeated Transport transports = 2;
     // the protocols attached to this host.
@@ -182,7 +175,7 @@ message Connection {
     // used for (cross)referencing connections (e.g. relay).
     bytes id                = 1;
     // the peer id of the other party.
-    PeerId peer_id          = 2;
+    string peer_id          = 2;
     // the status of this connection.
     Status status           = 3;
     // the transport managing this connection.
