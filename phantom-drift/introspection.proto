@@ -42,7 +42,7 @@ message DataGauge {
     uint64 cum_bytes    = 1;
     // Cumulative packets.
     uint64 cum_packets  = 2;
-    // Instantaneous bandwidth measurement.
+    // Instantaneous bandwidth measurement (bytes/second).
     uint64 inst_bw      = 3;
 }
 
