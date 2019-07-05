@@ -142,6 +142,8 @@ message Runtime {
 message Subsystems {
     // the swarm subsystem.
     Swarm swarm = 1;
+    // the DHT subsystem.
+    DHT dht = 2;
 }
 
 // Host is a top-level object conveying a cross-cutting view of the entire system, including all subsystems.
@@ -297,6 +299,95 @@ message Stream {
     repeated string user_provided_tags  = 99;
 }
 
+// DHT metrics and state.
+message DHT {
+
+    message Params {
+        // maximum number of requests to perform.
+        uint64 k                    = 1;
+        // concurrency of asynchronous requests.
+        uint64 alpha                = 2;
+        // number of disjoint paths to use.
+        uint64 disjoint_paths       = 3;
+    }
+
+    message RoutingTable {
+
+        message Bucket {
+            // bucket peers.
+            repeated bytes peers    = 1;
+        }
+
+        // size of the buckets.
+        uint64 bucket_size          = 1;
+        // peers queried.
+        repeated Bucket buckets     = 2;
+    }
+
+    message Operations {
+        // counter for put operations.
+        ResultCounter operation_put = 1;
+        // latency for put operations.
+        repeated uint64 latency_put_ns = 2;
+        // counter for get operations.
+        ResultCounter operation_get = 3;
+        // latency for get operations.
+        repeated uint64 latency_get_ns = 4;
+        // counter for provide operations.
+        ResultCounter operation_provide = 5;
+        // latency for provide operations.
+        repeated uint64 latency_provide_ns = 6;
+        // counter for provide operations.
+        ResultCounter operation_provide = 7;
+        // latency for provide operations.
+        repeated uint64 latency_provide_ns = 8;
+    }
+
+    message Query {
+
+        // Trigger of the query.
+        enum Trigger {
+            API                     = 0;
+            DISCOVERY               = 1;
+        }
+
+        // Type of the query.
+        enum Type {
+            CONTENT                 = 0;
+            PROVIDER                = 1;
+            VALUE                   = 2;
+        }
+
+        // id of the query.
+        bytes id                    = 1;
+        // total time of the query.
+        uint64 total_time           = 2;
+        // peers queried.
+        repeated bytes peers        = 3;
+        // trigger of the query.
+        Trigger trigger             = 4;
+        // type of the query.
+        Type type                   = 5;
+        // rpc message of the query.
+        bytes rpc                   = 6;
+    }
+
+    // protocol name.
+    string protocol                 = 1;
+    // protocol enabled.
+    bool enabled                    = 2;
+    // timestap of start up.
+    google.protobuf.Timestamp start_ts = 3;
+    // params of the dht.
+    Params params                   = 4;
+    // routing table.
+    RoutingTable dht_routing_table  = 5;
+    // counters for operations.
+    Operations operations           = 6;
+    // queries data.
+    repeated Query query            = 7;
+}
+
 // TODO:
 //
 //Area	Entity	Attribute	Data type	Description	Sampling variability	Can act as filter
@@ -308,33 +399,6 @@ message Stream {
 //...
 //peerstore	key_book
 //peerstore	metadata
-//...
-//dht	global	enabled	bool	DHT enabled	fixed	Y
-//dht	global	start_ts	timestamp	timestamp of dht start up	fixed	N
-//...
-//dht	protocol	name	string	protocol name	fixed	Y
-//dht	protocol	get_tried	uint	number of attempted gets	continuous	N
-//dht	protocol	get_success	uint	number of successful gets	continuous	N
-//dht	protocol	get_latency	uint	average get latency	continuous	N
-//dht	protocol	put_tried	uint	number of attempted puts	continuous	N
-//dht	protocol	put_success	uint	number of successful puts	continuous	N
-//dht	protocol	put_latency	uint	average put latency	continuous	N
-//dht	protocol	k	uint	maximum number of requests to perform before returning failure	fixed	N
-//dht	protocol	alpha	uint	concurrency for asynchronous requests	fixed	N
-//dht	protocol	disjoint_paths	uint	number of disjoint query paths to use	fixed	N
-//dht	protocol	queries	[query]	list of queries	continuous	N
-//...
-//dht	routing_table	buckets	[k-bucket]	list of all the fingers to other nodes	continuous	N
-//dht	routing_table	bucket_size	uint	size of each bucket	fixed	N
-//...
-//dht	bucket	peers	[peer]	list of peers	continuous	N
-//...
-//dht	query	id	id	query identifier	fixed	N
-//dht	query	total_time	uint	query total time	continuous	N
-//dht	query	peers	[peer]	peers queried	continuous	N
-//dht	query	trigger	enum: api/random-walk	trigger of the query	fixed	Y
-//dht	query	type	enum: content/provider/value	context of the query	fixed	Y
-//dht	query	rpc	rpc	rpc message	fixed	N
 //...
 //pubsub	global	enabled	bool	Pubsub enabled	fixed	Y
 //pubsub	global	routing_implementation	string	Pubsub routing implementation (floodsub, gossipsub, ...)	fixed	Y
