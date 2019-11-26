@@ -172,12 +172,12 @@ Solving routing scalability for IPFS and libp2p is of utmost importance. As the 
 
 ### Existing Conversations/Threads
 
-https://github.com/ipfs/notes/issues/291
-https://github.com/ipfs/notes/issues/198
-https://github.com/ipfs/notes/issues/162
-https://github.com/ipfs/notes/issues/15
-https://github.com/libp2p/notes/issues/10
-https://github.com/libp2p/notes/issues/3
-https://github.com/libp2p/research-dht/issues/6
+- https://github.com/ipfs/notes/issues/291
+- https://github.com/ipfs/notes/issues/198
+- https://github.com/ipfs/notes/issues/162
+- https://github.com/ipfs/notes/issues/15
+- https://github.com/libp2p/notes/issues/10
+- https://github.com/libp2p/notes/issues/3
+- https://github.com/libp2p/research-dht/issues/6
 
 ### Extra notes
