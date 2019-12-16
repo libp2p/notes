@@ -42,9 +42,12 @@ Most pub/sub systems that have been proposed before mostly have proven scalabili
 
 General purpose pub/sub messaging systems can prove very useful from several different aspects (from management and operation to performance) in P2P networks and as such come with many tradeoffs. Due to the wide variety of applications building on top of pubsub systems, not all tradeoffs apply to all systems and many of them are contradictory to each other. Below, we discuss some of them.
 
-**Reliable Delivery.** In case of no node downtime, all published messages should be delivered to all subscriber nodes. Pub/Sub systems should be *robust against node churn* and should still reach most nodes (i.e., achieve high hit rate). Fast recovery from churn is also a desirable feature.
+**Reliable Delivery.** In case of no node downtime, all published messages should be delivered to all subscriber nodes. Pub/Sub systems should be *robust against node churn* and should still reach most nodes (i.e., achieve high hit rate). Apart from *robustness against churn*, *fast recovery from churn* is also a necessary feature.
+
 **Load Balancing.** The event message relay load should be roughly equally split between nodes. Assuming a scaled up system where nodes might be subscribed to 5K events, relaying messages is becoming a heavy task and therefore, the more nodes a node is connected to (in terms of degree), the more the relay tasks it will have to carry out.
+
 **Scalability.** Given the growth of networked systems, both in a cloud environment, but also in a P2P network, the system should be able to scale up to millions of nodes. There have been very few (if any) systems that achieved scalability of that order in unmanaged, P2P environments.
+
 **Resource-Efficient.** The system should avoid duplicate messages (i.e., deliver the same message to a node twice). This increases load on individual relay nodes, but also the overall system's bandwidth requirements.
 
 **Striking the right balance, especially in an unmanaged, unstructured P2P overlay of massive scale has not seen a solution to date. This is the gap that we are looking to fill with the outcome of this Open Problem.**
