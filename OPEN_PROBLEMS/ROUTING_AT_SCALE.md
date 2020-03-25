@@ -3,7 +3,7 @@
 ## Short Description
 > In one sentence or paragraph.
 
-Routing in content-oriented or content-centric networks means that any content published in this network needs to have a *routable address*. While traditionally the number of routable addresses needed (i.e., IP addresses) was bounded by the number of physical machines/end-notes, switching to addressable content means that the number of routable addresses is automatically exploding to the number of different content items (i.e., any file) that is published in the Internet.
+Routing in content-oriented or content-centric networks means that any content published in this network needs to have a *routable address*. While traditionally the number of routable addresses needed (i.e., IP addresses) was bounded by the number of physical machines/end-nodes, switching to addressable content means that the number of routable addresses is automatically exploding to the number of different content items (i.e., any file) that is published in the Internet.
 
 That said, *content-addressable networks face the challenge of routing scalability*, as the amount of addressable elements in the network rises by several orders of magnitude compared to the host-addressable Internet of today.
 
@@ -15,7 +15,7 @@ Routing in content-oriented and content-centric networks has traditionally been 
 
 **Keeping State per Content**
 
-Attempting to address content directly means that routing tables have to keep state per content, as opposed to keeping state per end-host as is the case today. This applies to both content-addressable overlay P2P networks and native network layer content-centric networks. Furthermore, in a native network-layer content-addressable network, routing will likely have to be done *per content chunk*, where each chunk is similar in size to an IP packet to avoid further fragmentation. Although the size of a content chunk is subject to debate, it is assumed that it is going to be in the order of a few KBs. This, in turn, means that routing nodes have to *keep state per content packet*, as opposed to end-host machine, which increases even more the size requirements of routing tables. In case of P2P overlay networks, this requirement can be relaxed and addressable items can be of bigger size. However, as addressable space gets bigger (i.e., more content is published), keeping state of how to resolve content is becoming an issue in overlay networks too.
+Attempting to address content directly means that routing tables have to keep state per content, as opposed to keeping state per end-host as is the case today. This applies to both content-addressable overlay P2P networks and native network layer content-centric networks. Furthermore, in a native network-layer content-addressable network, routing will likely have to be done *per content chunk*, where each chunk is similar in size to an IP packet to avoid further fragmentation. Although the size of a content chunk is subject to debate, it is assumed that it is going to be in the order of a few KBs. This, in turn, means that routing nodes have to *keep state per content packet*, as opposed to end-host machine, which increases even more the size requirements of routing tables. In case of P2P overlay networks, this requirement can be relaxed and addressable items can be of bigger size. However, as the addressable space gets bigger (i.e., more content is published), keeping state of how to resolve content is becoming an issue in overlay networks too.
 
 **Content Naming and its Role in Content Routing**
 
