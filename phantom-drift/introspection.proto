@@ -1,0 +1,451 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package introspection.pb;
+
+// ResultCounter is a monotonically increasing counter that reports an ok/err breakdown of the total.
+message ResultCounter {
+    uint32 total = 1;
+    uint32 ok = 2;
+    uint32 err = 3;
+}
+
+// Moving totals over sliding time windows. Models sensible time windows,
+// we don't have to populate them all at once.
+//
+// Graphical example:
+//
+// time     past -> present                              an event 16 min ago
+// ======================================================X================>>
+//                                                       |               | 1m
+//                                                       |           |---| 5m
+//                                                       | |-------------| 15m
+//                                          |------------X---------------| 30m
+//            |------------------------------------------X---------------| 60m
+message SlidingCounter {
+    uint32 over_1m      = 1;
+    uint32 over_5m      = 2;
+    uint32 over_15m     = 3;
+    uint32 over_30m     = 4;
+    uint32 over_1hr     = 5;
+    uint32 over_2hr     = 6;
+    uint32 over_4hr     = 7;
+    uint32 over_8hr     = 8;
+    uint32 over_12hr    = 9;
+    uint32 over_24hr    = 10;
+}
+
+// DataGauge reports stats for data traffic in a given direction.
+message DataGauge {
+    // Cumulative bytes.
+    uint64 cum_bytes    = 1;
+    // Cumulative packets.
+    uint64 cum_packets  = 2;
+    // Instantaneous bandwidth measurement (bytes/second).
+    uint64 inst_bw      = 3;
+}
+
+// Transport represents the state of a transport. Stats for the transport are
+// hosted and reported from the relevant component.
+message Transport {
+    // the id of this transport for referencing purposes.
+    bytes id       = 1;
+    // the name of this transport.
+    string name     = 2;
+    // whether this transport is enabled for listening.
+    bool listening  = 3;
+    // whether this transport is enabled for dialing.
+    bool dialing    = 4;
+    // the multiaddrs this transport is listening on, if enabled for listening.
+    repeated string listen_multiaddrs = 5;
+}
+
+// Dialer encapsulates stats and state about the swarm dialer.
+message Dialer {
+    // InflightDial represents a dial that is in progress.
+    message InflightDial {
+        string peer_id          = 1;
+        uint32 addrs_cnt        = 2;
+        ResultCounter attempts  = 3;
+    }
+
+    // the number of concurrent dials allowed.
+    uint32 throttle_max     = 1;
+    // the number of concurrent dials currently active.
+    uint32 throttle_curr    = 2;
+
+    // peer dial stats.
+    ResultCounter peer_dials    = 3;
+    // address dial stats.
+    ResultCounter addrs_dials   = 4;
+    // dial stats per transport.
+    map<string, ResultCounter> dials_per_transport = 5;
+
+    // listing of in-progress dials.
+    repeated InflightDial inflight = 6;
+}
+
+// Swarm reports stats and state of the swarm subsystem.
+message Swarm {
+    // SwarmCounterGroup models a group of counters; encapsulation is important to spare 1-byte field IDs (1-15).
+    message SwarmCounterGroup {
+        // incoming items opened.
+        SlidingCounter incoming_opened = 1;
+        // outgoing items opened.
+        SlidingCounter outgoing_opened = 2;
+        // items closed.
+        SlidingCounter closed = 3;
+        // current count (instantaneous reading).
+        uint32 active = 4;
+    }
+
+    // TaggedSwarmCounterGroup models a group of counters segregated by a tag.
+    // See docs for SwarmCounterGroup for inner fields.
+    message TaggedSwarmCounterGroup {
+        map<string, SlidingCounter> incoming_opened = 1;
+        map<string, SlidingCounter> outgoing_opened = 2;
+        map<string, SlidingCounter> closed = 3;
+        map<string, uint32> active = 4;
+    }
+
+    // connections statistics.
+    SwarmCounterGroup conn_stats = 1;
+    // stream statistics
+    SwarmCounterGroup stream_stats = 2;
+    // stream statistics per protocol.
+    TaggedSwarmCounterGroup stream_by_proto_stats = 3;
+
+    // connection listing.
+    repeated Connection conns = 4;
+    // streams listing.
+    repeated Stream streams = 5;
+
+    // inner subsystems
+    Dialer dialer = 6;
+
+    // We want to be frugal with the 1-15 field id range, as they are represented by 1 byte only.
+    reserved 7 to 15;
+}
+
+// Runtime encapsulates runtime info about a node.
+message Runtime {
+    // e.g. go-libp2p, js-libp2p, rust-libp2p, etc.
+    string implementation   = 1;
+    // e.g. 1.2.3.
+    string version          = 2;
+    // e.g. Windows, Unix, macOS, Chrome, Mozilla, etc.
+    string platform         = 3;
+}
+
+// Subsystems encapsulates all instrumented subsystems for a libp2p host.
+message Subsystems {
+    // the swarm subsystem.
+    Swarm swarm = 1;
+    // the DHT subsystem.
+    DHT dht = 2;
+}
+
+// Host is a top-level object conveying a cross-cutting view of the entire system, including all subsystems.
+// TODO: WIP right now we're only covering the Swarm subsystem.
+message Host {
+    // our peer id.
+    string peer_id  = 1;
+    // this node's info.
+    Runtime runtime = 2;
+    // the transports enabled in this host.
+    repeated Transport transports = 3;
+    // the protocols attached to this host.
+    repeated string protocols = 4;
+    // subsystem introspection.
+    Subsystems subsystems = 5;
+}
+
+// EndpointPair is a pair of multiaddrs.
+message EndpointPair {
+    // the source multiaddr.
+    string src_multiaddr = 1;
+    // the destination multiaddr.
+    string dst_multiaddr = 2;
+}
+
+// The status of a connection or stream.
+enum Status {
+    ACTIVE  = 0;
+    CLOSED  = 1;
+    OPENING = 2;
+    CLOSING = 3;
+    ERROR   = 4;
+}
+
+// Our role in a connection or stream.
+enum Role {
+    INITIATOR = 0;
+    RESPONDER = 1;
+}
+
+// Traffic encloses data transfer statistics.
+message Traffic {
+    // snapshot of the data in metrics.
+    DataGauge traffic_in    = 1;
+    // snapshot of the data out metrics.
+    DataGauge traffic_out   = 2;
+}
+
+// a list of streams, by reference or inlined.
+message StreamList {
+    // NOTE: only one of the next 2 fields can appear, but proto3
+    // doesn't support combining oneof and repeated.
+    //
+    // streams within this connection by reference.
+    repeated bytes stream_ids   = 1;
+    // streams within this connection by inlining.
+    repeated Stream streams     = 2;
+}
+
+// Connection reports metrics and state of a libp2p connection.
+message Connection {
+    // Timeline contains the timestamps of the well-known milestones of a connection.
+    message Timeline {
+        // the instant when a connection was opened on the wire.
+        google.protobuf.Timestamp open_ts = 1;
+        // the instant when the upgrade process (handshake, security, multiplexing) finished.
+        google.protobuf.Timestamp upgraded_ts = 2;
+        // the instant when this connection was terminated.
+        google.protobuf.Timestamp close_ts = 3;
+    }
+
+    // Attributes encapsulates the attributes of this connection.
+    message Attributes {
+        // the multiplexer being used.
+        string multiplexer  = 1;
+        // the encryption method being used.
+        string encryption   = 2;
+    }
+
+    // the id of this connection, not to be shown in user tooling,
+    // used for (cross)referencing connections (e.g. relay).
+    bytes id                = 1;
+    // the peer id of the other party.
+    string peer_id          = 2;
+    // the status of this connection.
+    Status status           = 3;
+    // a reference to the transport managing this connection.
+    bytes transport_id      = 4;
+    // the endpoints participating in this connection.
+    EndpointPair endpoints  = 5;
+    // the timeline of the connection, see Connection.Timeline.
+    Timeline timeline       = 6;
+    // our role in this connection.
+    Role role               = 7;
+    // traffic statistics.
+    Traffic traffic         = 8;
+    // properties of this connection.
+    Attributes attribs      = 9;
+    // the instantaneous latency of this connection in nanoseconds.
+    uint64 latency_ns       = 10;
+    // streams within this connection.
+    StreamList streams      = 11;
+
+    reserved 12 to 15;
+
+    // if this is a relayed connection, this points to the relaying connection.
+    // a default value here (empty bytes) indicates this is not a relayed connection.
+    oneof relayed_over {
+        bytes conn_id       = 16;
+        Connection conn     = 17;
+    }
+    // user provided tags.
+    repeated string user_provided_tags  = 99;
+}
+
+// Stream reports metrics and state of a libp2p stream.
+message Stream {
+    message ConnectionRef {
+        oneof connection {
+            // the parent connection inlined.
+            Connection conn = 1;
+            // the parent connection by reference.
+            bytes conn_id   = 2;
+        }
+    }
+
+    // Timeline contains the timestamps of the well-known milestones of a stream.
+    message Timeline {
+        // the instant when the stream was opened.
+        google.protobuf.Timestamp open_ts = 1;
+        // the instant when the stream was terminated.
+        google.protobuf.Timestamp close_ts = 2;
+    }
+
+    // the id of this stream, not to be shown in user tooling,
+    // used for (cross)referencing streams.
+    bytes id        = 1;
+    // the protocol pinned to this stream.
+    string protocol = 2;
+    // our role in this stream.
+    Role role       = 3;
+    // traffic statistics.
+    Traffic traffic = 4;
+    // the connection this stream is hosted under.
+    ConnectionRef conn  = 5;
+    // the timeline of the stream, see Stream.Timeline.
+    Timeline timeline   = 6;
+
+    // the instantaneous latency of this stream in nanoseconds.
+    // TODO: this is hard to calculate.
+    uint64 latency_ns       = 16;
+    // user provided tags.
+    repeated string user_provided_tags  = 99;
+}
+
+// DHT metrics and state.
+message DHT {
+
+    message Params {
+        // maximum number of requests to perform.
+        uint64 k                    = 1;
+        // concurrency of asynchronous requests.
+        uint64 alpha                = 2;
+        // number of disjoint paths to use.
+        uint64 disjoint_paths       = 3;
+    }
+
+    message RoutingTable {
+
+        message Bucket {
+            // bucket peers.
+            repeated bytes peers    = 1;
+        }
+
+        // size of the buckets.
+        uint64 bucket_size          = 1;
+        // peers queried.
+        repeated Bucket buckets     = 2;
+    }
+
+    message Operations {
+        // counter for put operations.
+        ResultCounter operation_put = 1;
+        // latency for put operations.
+        repeated uint64 latency_put_ns = 2;
+        // counter for get operations.
+        ResultCounter operation_get = 3;
+        // latency for get operations.
+        repeated uint64 latency_get_ns = 4;
+        // counter for provide operations.
+        ResultCounter operation_provide = 5;
+        // latency for provide operations.
+        repeated uint64 latency_provide_ns = 6;
+        // counter for provide operations.
+        ResultCounter operation_provide = 7;
+        // latency for provide operations.
+        repeated uint64 latency_provide_ns = 8;
+    }
+
+    message Query {
+
+        // Trigger of the query.
+        enum Trigger {
+            API                     = 0;
+            DISCOVERY               = 1;
+        }
+
+        // Type of the query.
+        enum Type {
+            CONTENT                 = 0;
+            PROVIDER                = 1;
+            VALUE                   = 2;
+        }
+
+        // id of the query.
+        bytes id                    = 1;
+        // total time of the query.
+        uint64 total_time           = 2;
+        // peers queried.
+        repeated bytes peers        = 3;
+        // trigger of the query.
+        Trigger trigger             = 4;
+        // type of the query.
+        Type type                   = 5;
+        // rpc message of the query.
+        bytes rpc                   = 6;
+    }
+
+    // protocol name.
+    string protocol                 = 1;
+    // protocol enabled.
+    bool enabled                    = 2;
+    // timestap of start up.
+    google.protobuf.Timestamp start_ts = 3;
+    // params of the dht.
+    Params params                   = 4;
+    // routing table.
+    RoutingTable dht_routing_table  = 5;
+    // counters for operations.
+    Operations operations           = 6;
+    // queries data.
+    repeated Query query            = 7;
+}
+
+// TODO:
+//
+//Area	Entity	Attribute	Data type	Description	Sampling variability	Can act as filter
+//general	global	implementation	string	node implementation (go, js, rust, ...)	fixed	Y
+//general	global	version	string	implementation version	fixed	Y
+//...
+//...
+//peerstore	address_book	addresses	[string]	addresses of the peers known by the peer	continuous	N
+//...
+//peerstore	key_book
+//peerstore	metadata
+//...
+//pubsub	global	enabled	bool	Pubsub enabled	fixed	Y
+//pubsub	global	routing_implementation	string	Pubsub routing implementation (floodsub, gossipsub, ...)	fixed	Y
+//...
+//pubsub	protocol	name	string	protocol name	fixed	Y
+//pubsub	protocol	subscribed_topics	[string]	Topics subscribed by a peer	continuous	Y
+//pubsub	protocol	peers	[peer]	Peers subscribed to a topic	continuous	Y
+//pubsub	protocol	messages_sent	uint	Number of messages sent by the peer	continuous	N
+//pubsub	protocol	messages_forwarded	uint	Number of messages forwared by the peer (coming from other peers)	continuous	N
+//pubsub	protocol	messages_for_routing	uint	Number of messages sent to keep the routing algorithm working	continuous	N
+//pubsub	protocol	messages_failed	uint	Number of messages that failed to send	continuous	N
+//pubsub	protocol	blacklist_peers	[peer]	Blacklisted peers	continuous	N
+//...
+//circuit-relay	global	endpoints	[peer]	peers we are relaying
+//...
+//circuit-relay	connection	data_in	size	data usage in	continuous	N
+//circuit-relay	connection	data_out	size	data usage out	continuous	N
+//circuit-relay	connection	open_ts	timestamp	timestamp of the connection start	fixed	N
+//circuit-relay	connection	close_ts	timestamp	timestamp of the connection stop	fixed	N
+//circuit-relay	connection	bandwidth	(size, size)	Bandwidth of both linkts	continuous	N
+//circuit-relay	connection	latency	uint	Latency since we read a byte from A and write it to B	continuous	N
+//circuit-relay	connection	transports	(transport, transport)	Transport pairs used by each peer communicating	continuous	N
+//...
+//connection-manager	global	maxPeers	uint	maxium number of peers the current peer is willing to connect	fixed	N
+//connection-manager	global	maxPeersPerProtocol	uint	maxium number of peers the current peer is willing to connect (per protocol)	fixed	N
+//connection-manager	global	minPeers	uint	number of peers below which the node will not activate preemptive disconnections	fixed	N
+//connection-manager	global	maxData	uint	maximum data per second	fixed	N
+//connection-manager	global	maxSentData	uint		fixed	N
+//connection-manager	global	maxReceivedData	uint		fixed	N
+//...
+//connection-manager	global	bandwidth	uint	bandwidth being used	continuous	N
+//connection-manager	peer	peers_connected	[peers]	peers connected	continuous	N
+//connection-manager	peer	peer_connected_event_count	uint	counter of peer connected event	continuous	N
+//connection-manager	peer	peer_disconnected_event_count	uint	counter of peer disconnected event	continuous	N
+//connection-manager	peer	peer_discovered_event_count	uint	counter of peer discovered event	continuous	N
+//...
+//connection-manager	connection	data_in	size		continuous	N
+//connection-manager	connection	data_out	size		continuous	N
+//connection-manager	connection	open_ts	timestamp		fixed	N
+//connection-manager	connection	close_ts	timestamp		fixed	N
+//connection-manager	connection	peer	peer		fixed	Y
+//connection-manager	connection	transport	string		fixed	Y
+//connection-manager	connection	multiaddr	string		fixed	Y
+//...
+//AutoNAT	global	status		NAT status
+//AutoNAT	global	peers	[peers]	AutoNAT peers connected
+//AutoNAT	global	last_dial_back_result		Last dial back result
+//AutoNAT	global	last_timestamp	timestamp	Last dial back timestamp
+//...
+//PrivateNetwork	global
